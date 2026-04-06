@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_07_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_07_081346) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -20,6 +20,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_000001) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["user_id"], name: "index_accounts_on_user_id", unique: true
+    t.check_constraint "balance >= 0::numeric", name: "accounts_balance_non_negative"
   end
 
   create_table "audit_logs", force: :cascade do |t|

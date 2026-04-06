@@ -20,7 +20,4 @@ Rails.application.routes.draw do
       end
     end
   end
-
-  # Если вы не используете API-режим и хотите корневой путь
-  # root "api/v1/orders#index"
 end

@@ -9,6 +9,7 @@ class CancelOrderService
 
     Account.transaction do
       account = @user.account
+      # order.amount теперь объект Money благодаря money-rails
       account.credit!(@order.amount, @order, "Refund for order #{@order.id}")
       @order.cancel!
     end

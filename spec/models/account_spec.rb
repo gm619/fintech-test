@@ -22,9 +22,9 @@ RSpec.describe Account, type: :model do
     context 'with sufficient funds' do
       it 'decreases balance' do
         expect {
-          account.debit!(100.00, order, 'Test debit')
+          account.debit!(100_00, order, 'Test debit')
           account.reload
-        }.to change(account, :balance).by(-100.00)
+        }.to change(account, :balance).by(Money.new(-100_00))
       end
 
       it 'creates a transaction' do
@@ -35,7 +35,7 @@ RSpec.describe Account, type: :model do
 
     context 'with insufficient funds' do
       it 'raises an error' do
-        expect { account.debit!(600.00, order) }
+        expect { account.debit!(600_00, order) }
           .to raise_error("Insufficient funds")
       end
     end
@@ -47,14 +47,14 @@ RSpec.describe Account, type: :model do
     let(:order) { create(:order, user: user) }
 
     before do
-      account.update!(balance: 500.00)
+      account.update!(balance: 500_00)
     end
 
     it 'increases balance' do
       expect {
-        account.credit!(100.00, order, 'Test credit')
+        account.credit!(100_00, order, 'Test credit')
         account.reload
-      }.to change(account, :balance).by(100.00)
+      }.to change(account, :balance).by(Money.new(100_00))
     end
 
     it 'creates a transaction' do

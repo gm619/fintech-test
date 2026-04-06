@@ -12,7 +12,7 @@ RSpec.describe CancelOrderService do
     context 'with successful order' do
       it 'refunds the order amount' do
         expect { described_class.new(order).call }
-          .to change { user.account.reload.balance }.by(100.00)
+          .to change { user.account.reload.balance }.by(Money.new(100_00))
       end
 
       it 'creates a credit transaction' do

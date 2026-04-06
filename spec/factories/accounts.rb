@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :account do
     user
-    balance { 1000.00 }
+    balance { Money.new(100_000) }
   end
 end

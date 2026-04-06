@@ -8,7 +8,7 @@ RSpec.describe Api::V1::OrdersController, type: :request do
 
   # Устанавливаем сессию для аутентификации
   before do
-    account.update!(balance: 500.00)
+    account.update!(balance: Money.new(500_00))
     allow_any_instance_of(ApplicationController).to receive(:session).and_return({ user_id: user.id })
     # Разрешаем все действия для тестов (Pundit policy)
     allow_any_instance_of(OrderPolicy).to receive(:create?).and_return(true)
@@ -21,12 +21,12 @@ RSpec.describe Api::V1::OrdersController, type: :request do
     context 'with valid params' do
       it 'creates a new order' do
         expect {
-          post '/api/v1/orders', params: { order: { amount: 100.00 } }, as: :json
+          post '/api/v1/orders', params: { order: { amount: 100_00 } }, as: :json
         }.to change(Order, :count).by(1)
       end
 
       it 'returns created status' do
-        post '/api/v1/orders', params: { order: { amount: 100.00 } }, as: :json
+        post '/api/v1/orders', params: { order: { amount: 100_00 } }, as: :json
         expect(response).to have_http_status(:created)
       end
     end
@@ -41,7 +41,7 @@ RSpec.describe Api::V1::OrdersController, type: :request do
   end
 
   describe 'POST /api/v1/orders/:id/complete' do
-    let(:order) { create(:order, user: user, amount: 100.00, status: 'created') }
+    let(:order) { create(:order, user: user, amount: Money.new(100_00), status: 'created') }
 
     it 'completes the order' do
       post "/api/v1/orders/#{order.id}/complete", as: :json
@@ -51,7 +51,7 @@ RSpec.describe Api::V1::OrdersController, type: :request do
     it 'debits the account' do
       expect {
         post "/api/v1/orders/#{order.id}/complete", as: :json
-      }.to change { user.account.reload.balance }.by(-100.00)
+      }.to change { user.account.reload.balance }.by(Money.new(-100_00))
     end
   end
 
@@ -75,11 +75,10 @@ RSpec.describe Api::V1::OrdersController, type: :request do
 
   describe 'POST /api/v1/orders/:id/cancel' do
     # CancelOrderService требует successful статус (это возврат денег)
-    let(:order) { create(:order, user: user, amount: 100.00, status: 'successful') }
+    let(:order) { create(:order, user: user, amount: Money.new(100_00), status: 'successful') }
 
     it 'cancels the order and refunds' do
       post "/api/v1/orders/#{order.id}/cancel", as: :json
-      # puts "Response: #{response.status} - #{response.body}"
       expect(order.reload.status).to eq('canceled')
     end
   end

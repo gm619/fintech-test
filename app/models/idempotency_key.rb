@@ -7,6 +7,6 @@ class IdempotencyKey < ApplicationRecord
 
   # Очистка старых ключей (старше 24 часов)
   def self.cleanup
-    where('created_at < ?', 24.hours.ago).delete_all
+    where("created_at < ?", 24.hours.ago).delete_all
   end
 end

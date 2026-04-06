@@ -2,10 +2,10 @@ FactoryBot.define do
   factory :transaction do
     account
     order
-    amount { 100.00 }
+    amount { Money.new(10_000) }
     operation_type { "debit" }
-    balance_before { 500.00 }
-    balance_after { 400.00 }
+    balance_before { Money.new(50_000) }
+    balance_after { Money.new(40_000) }
     description { "Test transaction" }
   end
 end

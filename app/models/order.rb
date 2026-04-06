@@ -4,6 +4,8 @@ class Order < ApplicationRecord
   belongs_to :user
   has_many :transactions
 
+  monetize :amount_cents, as: :amount
+
   validates :amount, numericality: { greater_than: 0, less_than: 1_000_000_000 }
   validates :amount, presence: true
 

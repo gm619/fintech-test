@@ -1,7 +1,7 @@
 FactoryBot.define do
   factory :order do
     user
-    amount { 150.00 }
+    amount { Money.new(15_000) }
     status { 'created' }
   end
 end

@@ -1,10 +1,21 @@
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  namespace :api do
+    namespace :v1 do
+      resources :orders, only: [:create, :show, :index] do
+        member do
+          post :complete      # POST /api/v1/orders/:id/complete
+          post :cancel        # POST /api/v1/orders/:id/cancel
+          get  :payment_logs  # GET  /api/v1/orders/:id/payment_logs
+        end
+      end
 
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
-  get "up" => "rails/health#show", as: :rails_health_check
+      # Опционально: если нужен отдельный просмотр счетов или транзакций
+      resource :account, only: [:show] do
+        get :transactions
+      end
+    end
+  end
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+  # Если вы не используете API-режим и хотите корневой путь
+  # root "api/v1/orders#index"
 end

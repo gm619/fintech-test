@@ -1,4 +1,8 @@
 class User < ApplicationRecord
+  include Auditable
+  self.audit_name = "User"
+  self.audit_excluded_attributes = %w[password_digest]
+
   has_secure_password
 
   has_one :account, dependent: :destroy

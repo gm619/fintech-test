@@ -10,17 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_07_081346) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_07_082514) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "accounts", force: :cascade do |t|
-    t.decimal "balance", precision: 15, scale: 2, default: "0.0", null: false
+    t.bigint "balance_cents", default: 0, null: false
+    t.string "balance_currency", default: "USD", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["user_id"], name: "index_accounts_on_user_id", unique: true
-    t.check_constraint "balance >= 0::numeric", name: "accounts_balance_non_negative"
   end
 
   create_table "audit_logs", force: :cascade do |t|
@@ -49,7 +49,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_081346) do
   end
 
   create_table "orders", force: :cascade do |t|
-    t.decimal "amount", precision: 15, scale: 2, null: false
+    t.bigint "amount_cents", default: 0, null: false
+    t.string "amount_currency", default: "USD", null: false
     t.datetime "created_at", null: false
     t.string "status", default: "created", null: false
     t.datetime "updated_at", null: false
@@ -60,9 +61,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_081346) do
 
   create_table "transactions", force: :cascade do |t|
     t.bigint "account_id", null: false
-    t.decimal "amount", precision: 15, scale: 2, null: false
-    t.decimal "balance_after", precision: 15, scale: 2, null: false
-    t.decimal "balance_before", precision: 15, scale: 2, null: false
+    t.bigint "amount_cents", default: 0, null: false
+    t.string "amount_currency", default: "USD", null: false
+    t.bigint "balance_after_cents", default: 0, null: false
+    t.string "balance_after_currency", default: "USD", null: false
+    t.bigint "balance_before_cents", default: 0, null: false
+    t.string "balance_before_currency", default: "USD", null: false
     t.datetime "created_at", null: false
     t.string "description"
     t.string "operation_type", null: false

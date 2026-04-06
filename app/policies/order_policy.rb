@@ -18,7 +18,7 @@ class OrderPolicy < ApplicationPolicy
   end
 
   def cancel?
-    record.user == user && record.created?
+    record.user == user && (record.created? || record.successful?)
   end
 
   def payment_logs?

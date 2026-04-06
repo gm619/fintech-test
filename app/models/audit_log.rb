@@ -5,7 +5,14 @@ class AuditLog < ApplicationRecord
 
   validates :action, presence: true
 
-  # Действия для аудита
+  # Polymorphic entity access
+  def entity
+    return nil unless entity_type.present? && entity_id.present?
+    entity_type.constantize.find_by(id: entity_id)
+  end
+
+  # Действия для аудита (автогенерируемые + ручные)
+  # Авто: {entity}_created, {entity}_updated, {entity}_deleted
   ACTIONS = %w[
     user_login
     user_logout
@@ -16,6 +23,17 @@ class AuditLog < ApplicationRecord
     account_credited
     payment_attempt
     payment_failed
+    user_created
+    user_updated
+    user_deleted
+    order_updated
+    order_deleted
+    account_created
+    account_updated
+    account_deleted
+    transaction_created
+    transaction_updated
+    transaction_deleted
   ].freeze
 
   validates :action, inclusion: { in: ACTIONS }

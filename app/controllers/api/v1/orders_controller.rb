@@ -36,7 +36,7 @@ class Api::V1::OrdersController < ApplicationController
       if idempotency_key.present?
         IdempotencyKey.create!(
           key: idempotency_key,
-          status: :created,
+          status: 201,
           response_body: response.to_json
         )
       end
@@ -68,7 +68,7 @@ class Api::V1::OrdersController < ApplicationController
     if idempotency_key.present?
       IdempotencyKey.create!(
         key: idempotency_key,
-        status: :ok,
+        status: 200,
         response_body: response.to_json
       )
     end
@@ -82,9 +82,30 @@ class Api::V1::OrdersController < ApplicationController
   def cancel
     order = current_user.orders.find(params[:id])
     authorize order
+
+    # Идемпотентность
+    idempotency_key = request.headers["Idempotency-Key"]
+    if idempotency_key.present?
+      existing = IdempotencyKey.find_by(key: idempotency_key)
+      if existing
+        return render json: JSON.parse(existing.response_body), status: existing.status
+      end
+    end
+
     CancelOrderService.new(order).call
     audit_log!("order_canceled", entity: order, metadata: { amount: order.amount })
-    render json: { id: order.id, status: order.reload.status }
+
+    response = { id: order.id, status: order.reload.status }
+
+    if idempotency_key.present?
+      IdempotencyKey.create!(
+        key: idempotency_key,
+        status: 200,
+        response_body: response.to_json
+      )
+    end
+
+    render json: response
   end
 
   def payment_logs

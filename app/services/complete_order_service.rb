@@ -8,7 +8,9 @@ class CompleteOrderService
     raise "Order already successful" unless @order.created?
 
     Account.transaction do
-      account = @user.account
+      account = @user.account.lock!
+      raise "Insufficient funds" if account.balance < @order.amount
+
       account.debit!(@order.amount, @order, "Order #{@order.id} payment")
       @order.complete!
     end

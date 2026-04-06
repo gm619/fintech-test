@@ -8,7 +8,18 @@ class ApplicationController < ActionController::API
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
   rescue_from Pundit::NotAuthorizedError, with: :render_forbidden
 
+  around_action :set_audit_context, if: :current_user
+
   private
+
+  def set_audit_context
+    Thread.current[:audit_user] = @current_user
+    Thread.current[:audit_request] = request
+    yield
+  ensure
+    Thread.current[:audit_user] = nil
+    Thread.current[:audit_request] = nil
+  end
 
   def authenticate_user!
     @current_user = User.find_by(id: session[:user_id])

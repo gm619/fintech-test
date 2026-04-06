@@ -1,4 +1,7 @@
 class Transaction < ApplicationRecord
+  include Auditable
+  self.audit_name = "Transaction"
+
   belongs_to :account
   belongs_to :order
 

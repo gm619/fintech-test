@@ -1,6 +1,9 @@
 class Order < ApplicationRecord
   include AASM
 
+  include Auditable
+  self.audit_name = "Order"
+
   belongs_to :user
   has_many :transactions
 

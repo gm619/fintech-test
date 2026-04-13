@@ -11,7 +11,7 @@ class CreatePaymentProviders < ActiveRecord::Migration[8.1]
     end
 
     add_index :payment_providers, :priority
-    add_index :payment_providers, [:is_active, :priority]
+    add_index :payment_providers, [ :is_active, :priority ]
     add_index :payment_providers, :name, unique: true
   end
 end

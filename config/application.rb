@@ -24,6 +24,15 @@ module FintechTest
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets tasks])
 
+    # Custom inflector rules for payment providers (PayPal, Stripe)
+    Rails.autoloaders.each do |autoloader|
+      autoloader.inflector.inflect(
+        "paypal" => "PayPal",
+        "stripe" => "Stripe",
+        "internal_balance" => "InternalBalance"
+      )
+    end
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

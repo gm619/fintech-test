@@ -93,6 +93,34 @@ class Api::V1::OrdersController < ApplicationController
     }
   end
 
+  def payment_status
+    order = Order.find(params[:id])
+    authorize order
+
+    attempts = order.transactions
+      .where.not(provider_name: nil)
+      .order(created_at: :desc)
+      .map { |t|
+        {
+          id: t.id,
+          provider: t.provider_name,
+          external_transaction_id: t.external_transaction_id,
+          provider_status: t.provider_status,
+          amount: t.amount,
+          operation_type: t.operation_type,
+          created_at: t.created_at,
+          error: t.provider_response&.dig("error")
+        }
+      }
+
+    render json: {
+      order_id: order.id,
+      order_status: order.status,
+      payment_attempts: attempts,
+      latest_attempt: attempts.first
+    }
+  end
+
   private
 
   def handle_idempotent_replay

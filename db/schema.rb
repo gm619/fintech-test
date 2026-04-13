@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_07_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_07_110001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -60,6 +60,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_100000) do
     t.index ["user_id"], name: "index_orders_on_user_id"
   end
 
+  create_table "payment_providers", force: :cascade do |t|
+    t.jsonb "config", default: {}
+    t.datetime "created_at", null: false
+    t.boolean "is_active", default: true, null: false
+    t.string "name", null: false
+    t.integer "priority", default: 0, null: false
+    t.string "type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["is_active", "priority"], name: "index_payment_providers_on_is_active_and_priority"
+    t.index ["name"], name: "index_payment_providers_on_name", unique: true
+    t.index ["priority"], name: "index_payment_providers_on_priority"
+  end
+
   create_table "transactions", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.bigint "amount_cents", default: 0, null: false
@@ -70,12 +83,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_100000) do
     t.string "balance_before_currency", default: "USD", null: false
     t.datetime "created_at", null: false
     t.string "description"
+    t.string "external_transaction_id"
     t.string "operation_type", null: false
     t.bigint "order_id", null: false
+    t.string "provider_name"
+    t.jsonb "provider_response", default: {}
+    t.string "provider_status"
     t.datetime "updated_at", null: false
     t.index ["account_id", "created_at"], name: "index_transactions_on_account_id_and_created_at"
     t.index ["account_id"], name: "index_transactions_on_account_id"
+    t.index ["external_transaction_id"], name: "index_transactions_on_external_transaction_id"
     t.index ["order_id"], name: "index_transactions_on_order_id"
+    t.index ["provider_name"], name: "index_transactions_on_provider_name"
   end
 
   create_table "users", force: :cascade do |t|

@@ -8,14 +8,50 @@ class CompleteOrderService
     raise "Order already successful" unless @order.created?
 
     Account.transaction do
-      account = @user.account.lock!
-      raise "Insufficient funds" if account.balance < @order.amount
+      @user.account.lock!
 
-      account.debit!(@order.amount, @order, "Order #{@order.id} payment")
+      result = CascadePaymentService.new(@order, @user.account).call
+
+      unless result[:success]
+        audit_payment_failed(result)
+        raise "Cannot complete order: #{result[:error]}"
+      end
+
+      # Payment succeeded — now complete the order
       @order.complete!
+      audit_order_completed(result)
     end
     true
-  rescue AASM::InvalidTransition, RuntimeError => e
+  rescue AASM::InvalidTransition, StandardError => e
     raise "Cannot complete order: #{e.message}"
+  end
+
+  private
+
+  def audit_payment_failed(result)
+    AuditLog.log!(
+      user: @user,
+      action: "payment_failed",
+      entity: @order,
+      metadata: { error: result[:error], attempts: result[:attempts] },
+      request: RequestStore.store[:audit_request]
+    )
+  rescue => e
+    Rails.logger.error("Failed to write audit log: #{e.message}")
+  end
+
+  def audit_order_completed(result)
+    AuditLog.log!(
+      user: @user,
+      action: "order_completed",
+      entity: @order,
+      metadata: {
+        provider: result[:transaction].provider_name,
+        external_transaction_id: result[:transaction].external_transaction_id
+      },
+      request: RequestStore.store[:audit_request]
+    )
+  rescue => e
+    Rails.logger.error("Failed to write audit log: #{e.message}")
   end
 end

@@ -9,15 +9,23 @@ Rails.application.routes.draw do
 
       resources :orders, only: [ :create, :show, :index ] do
         member do
-          post :complete      # POST /api/v1/orders/:id/complete
-          post :cancel        # POST /api/v1/orders/:id/cancel
-          get  :payment_logs  # GET  /api/v1/orders/:id/payment_logs
+          post :complete
+          post :cancel
+          get :payment_logs
+          get :payment_status
         end
       end
 
       resource :account, only: [ :show ] do
         get :transactions
       end
+
+      resources :payment_providers, only: [ :index ]
     end
+  end
+
+  namespace :webhooks do
+    post "stripe", to: "stripe#create"
+    post "paypal", to: "paypal#create"
   end
 end

@@ -8,6 +8,7 @@ RSpec.describe Api::V1::OrdersController, type: :request do
 
   before do
     account.update!(balance: Money.new(500_00))
+    create(:payment_provider, name: "internal_balance", type: "PaymentProvider::InternalBalance", priority: 0)
     allow_any_instance_of(ApplicationController).to receive(:session).and_return({ user_id: user.id })
     allow_any_instance_of(OrderPolicy).to receive(:create?).and_return(true)
     allow_any_instance_of(OrderPolicy).to receive(:show?).and_return(true)
@@ -128,6 +129,20 @@ RSpec.describe Api::V1::OrdersController, type: :request do
 
   describe "POST /api/v1/orders/:id/cancel" do
     let(:order) { create(:order, user: user, amount: Money.new(100_00), status: "successful") }
+
+    before do
+      # Create a payment transaction so CancelOrderService can refund
+      order.transactions.create!(
+        account: account,
+        amount_cents: 100_00,
+        operation_type: "debit",
+        balance_before_cents: account.balance.cents,
+        balance_after_cents: account.balance.cents,
+        description: "Payment for order #{order.id}",
+        provider_name: "internal_balance",
+        provider_status: "succeeded"
+      )
+    end
 
     it "cancels the order and refunds" do
       post "/api/v1/orders/#{order.id}/cancel", as: :json
@@ -254,6 +269,19 @@ RSpec.describe Api::V1::OrdersController, type: :request do
 
     describe "POST /api/v1/orders/:id/cancel with Idempotency-Key" do
       let(:order) { create(:order, user: user, amount: Money.new(100_00), status: "successful") }
+
+      before do
+        order.transactions.create!(
+          account: user.account,
+          amount_cents: 100_00,
+          operation_type: "debit",
+          balance_before_cents: user.account.balance.cents,
+          balance_after_cents: user.account.balance.cents,
+          description: "Payment for order #{order.id}",
+          provider_name: "internal_balance",
+          provider_status: "succeeded"
+        )
+      end
 
       it "cancels on first request and stores key" do
         post "/api/v1/orders/#{order.id}/cancel",

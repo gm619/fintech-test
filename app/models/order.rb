@@ -6,6 +6,8 @@ class Order < ApplicationRecord
 
   belongs_to :user
   has_many :transactions
+  has_many :payment_attempts, -> { where.not(provider_name: nil).order(created_at: :desc) },
+           class_name: "Transaction", foreign_key: :order_id
 
   monetize :amount_cents, as: :amount
 

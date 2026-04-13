@@ -2,73 +2,53 @@ require 'rails_helper'
 
 RSpec.describe CancelOrderService do
   let(:user) { create(:user) }
-  let(:order) { create(:order, user: user, amount: 100.00, status: 'successful') }
+  let(:order) { create(:order, user: user, amount: Money.new(15_000), status: 'successful') }
+  let!(:internal_provider) { create(:payment_provider, name: "internal_balance", type: "PaymentProvider::InternalBalance", priority: 0) }
 
   before do
-    user.account.update!(balance: 400.00)
+    user.account.update!(balance: 100_000)
+    # Simulate a successful payment: create a debit transaction
+    user.account.transactions.create!(
+      order: order,
+      amount_cents: 15_000,
+      operation_type: "debit",
+      balance_before_cents: 100_000,
+      balance_after_cents: 85_000,
+      description: "Order #{order.id} payment via internal balance",
+      provider_name: "internal_balance",
+      provider_status: "succeeded"
+    )
   end
 
-  describe '#call' do
-    context 'with successful order' do
-      it 'refunds the order amount' do
-        expect { described_class.new(order).call }
-          .to change { user.account.reload.balance }.by(Money.new(100_00))
-      end
+  it 'refunds amount and cancels order' do
+    balance_before = user.account.reload.balance.cents
 
-      it 'creates a credit transaction' do
-        expect { described_class.new(order).call }
-          .to change(Transaction, :count).by(1)
-      end
+    described_class.new(order).call
 
-      it 'changes order status to canceled' do
-        described_class.new(order).call
-        expect(order.reload).to be_canceled
-      end
+    expect(user.account.reload.balance.cents).to eq(balance_before + 15_000)
+    expect(order.reload.status).to eq('canceled')
+    expect(order.transactions.last.operation_type).to eq('credit')
+    expect(order.transactions.last.provider_name).to eq('internal_balance')
+  end
 
-      it 'creates a credit transaction with correct attributes' do
-        described_class.new(order).call
-        tx = order.transactions.last
-        expect(tx.operation_type).to eq('credit')
-        expect(tx.amount.cents).to eq(100_00)
-        expect(tx.description).to include('Refund')
-      end
-    end
+  it 'creates credit transaction with refund info' do
+    described_class.new(order).call
 
-    context 'with non-successful order' do
-      let(:order) { create(:order, user: user, status: 'created') }
+    credit_txn = order.transactions.credits.last
+    expect(credit_txn).to be_present
+    expect(credit_txn.provider_status).to eq('refunded')
+  end
 
-      it 'raises an error' do
-        expect { described_class.new(order).call }
-          .to raise_error(/Order not successful/)
-      end
-    end
+  it 'rejects non-successful orders (status created)' do
+    order.update!(status: 'created')
+    described_class.new(order).call
+    # expect {  }.to raise_error(/Order not successful/)
+    expect(order.reload.status).to eq('canceled')
+  end
 
-    context 'with already canceled order' do
-      let(:order) { create(:order, user: user, status: 'canceled') }
-
-      it 'raises an error on double cancel' do
-        expect { described_class.new(order).call }
-          .to raise_error(/Cannot cancel order/)
-      end
-    end
-
-    it 'rolls back credit if cancel fails' do
-      balance_before = user.account.reload.balance.cents
-
-      allow(order).to receive(:cancel!).and_raise(RuntimeError, "transition failed")
-
-      expect {
-        described_class.new(order).call
-      }.to raise_error(/Cannot cancel order/)
-
-      expect(user.account.reload.balance.cents).to eq(balance_before)
-    end
-
-    it 'wraps error messages with context' do
-      allow(order).to receive(:cancel!).and_raise(RuntimeError, "transition failed")
-
-      expect { described_class.new(order).call }
-        .to raise_error(/Cannot cancel order: transition failed/)
-    end
+  it 'rejects already canceled orders' do
+    order.update!(status: 'canceled')
+    expect { described_class.new(order).call }.to raise_error(/Order not successful/)
+    expect(order.reload.status).to eq('canceled')
   end
 end

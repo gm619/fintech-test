@@ -23,7 +23,9 @@ class AuditLog < ApplicationRecord
     account_debited
     account_credited
     payment_attempt
+    payment_succeeded
     payment_failed
+    webhook_received
     user_created
     user_updated
     user_deleted

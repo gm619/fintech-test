@@ -184,6 +184,7 @@ GEM
       money (~> 7.0)
       railties (>= 7.0)
     msgpack (1.8.0)
+    multi_json (1.19.1)
     net-imap (0.6.3)
       date
       net-protocol
@@ -220,6 +221,9 @@ GEM
     parser (3.3.11.1)
       ast (~> 2.4.1)
       racc
+    paypal-sdk-rest (1.7.6)
+      multi_json (~> 1.0)
+      xml-simple
     pg (1.6.3)
     pg (1.6.3-aarch64-linux)
     pg (1.6.3-aarch64-linux-musl)
@@ -291,6 +295,7 @@ GEM
       io-console (~> 0.5)
     request_store (1.7.0)
       rack (>= 1.4)
+    rexml (3.4.4)
     rspec-core (3.13.6)
       rspec-support (~> 3.13.0)
     rspec-expectations (3.13.5)
@@ -367,6 +372,9 @@ GEM
       net-ssh (>= 2.8.0)
       ostruct
     stringio (3.2.0)
+    stripe (19.0.0)
+      bigdecimal
+      logger
     strong_migrations (2.5.2)
       activerecord (>= 7.1)
     thor (1.5.0)
@@ -388,6 +396,8 @@ GEM
       base64
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
+    xml-simple (1.1.9)
+      rexml
     zeitwerk (2.7.5)
 
 PLATFORMS
@@ -415,6 +425,7 @@ DEPENDENCIES
   image_processing (~> 1.2)
   kamal
   money-rails
+  paypal-sdk-rest
   pg (~> 1.1)
   puma (>= 5.0)
   pundit
@@ -427,6 +438,7 @@ DEPENDENCIES
   solid_cable
   solid_cache
   solid_queue
+  stripe
   strong_migrations
   thruster
   tzinfo-data

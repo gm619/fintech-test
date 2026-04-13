@@ -86,5 +86,5 @@ jobs:
           bin/rails db:create db:schema:load
 
       - name: Run tests
-        run: bin/rspec --format progress
+        run: bundle exec rspec --format progress
 

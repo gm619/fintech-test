@@ -6,13 +6,13 @@ RSpec.describe Auditable do
   let(:user) { create(:user) }
 
   before do
-    Thread.current[:audit_user] = nil
-    Thread.current[:audit_request] = nil
+    RequestStore.store[:audit_user] = nil
+    RequestStore.store[:audit_request] = nil
   end
 
   describe "User model" do
     it "logs user creation" do
-      Thread.current[:audit_user] = nil
+      RequestStore.store[:audit_user] = nil
       expect {
         create(:user, email: "new_#{SecureRandom.hex(6)}@example.com")
       }.to change(AuditLog, :count).by(2) # user + account
@@ -24,7 +24,7 @@ RSpec.describe Auditable do
 
     it "logs user creation with audit context" do
       admin_user = create(:user, email: "admin_#{SecureRandom.hex(6)}@example.com")
-      Thread.current[:audit_user] = admin_user
+      RequestStore.store[:audit_user] = admin_user
 
       expect {
         create(:user, email: "new2_#{SecureRandom.hex(6)}@example.com")
@@ -64,7 +64,7 @@ RSpec.describe Auditable do
     let(:order) { create(:order, user: user) }
 
     before do
-      Thread.current[:audit_user] = user
+      RequestStore.store[:audit_user] = user
     end
 
     it "logs order creation" do
@@ -98,13 +98,13 @@ RSpec.describe Auditable do
     let(:account) { user.account }
 
     before do
-      Thread.current[:audit_user] = user
+      RequestStore.store[:audit_user] = user
     end
 
     it "logs account creation" do
       # Account is created via User after_create callback, which happens in the same transaction
       # The audit user context needs to be set before user creation
-      Thread.current[:audit_user] = user
+      RequestStore.store[:audit_user] = user
       new_user = create(:user, email: "acc_#{SecureRandom.hex(6)}@example.com")
 
       audit = AuditLog.where(entity_type: "Account").last
@@ -126,7 +126,7 @@ RSpec.describe Auditable do
     let(:order) { create(:order, user: user) }
 
     before do
-      Thread.current[:audit_user] = user
+      RequestStore.store[:audit_user] = user
     end
 
     it "logs transaction creation" do
@@ -163,7 +163,7 @@ RSpec.describe Auditable do
   describe "audit context" do
     it "associates audit log with current user from thread" do
       # Set audit context before creating the user
-      Thread.current[:audit_user] = user
+      RequestStore.store[:audit_user] = user
 
       # Create a different entity - the audit should be associated with the context user
       other_user = create(:user, email: "context_#{SecureRandom.hex(6)}@example.com")
@@ -174,11 +174,72 @@ RSpec.describe Auditable do
     end
 
     it "handles missing user gracefully" do
-      Thread.current[:audit_user] = nil
+      RequestStore.store[:audit_user] = nil
 
       expect {
         create(:user, email: "noctx_#{SecureRandom.hex(6)}@example.com")
       }.not_to raise_error
+    end
+  end
+
+  describe "error resilience" do
+    it "does not block creation when audit fails" do
+      allow(AuditLog).to receive(:log!).and_raise(StandardError, "DB down")
+
+      expect {
+        create(:user, email: "resilient_#{SecureRandom.hex(6)}@example.com")
+      }.not_to raise_error
+    end
+  end
+
+  describe "value serialization" do
+    it "serializes BigDecimal as string to preserve precision" do
+      RequestStore.store[:audit_user] = user
+      # Use an attribute that is actually a BigDecimal (like balance validation)
+      user.update!(email: "precision_#{SecureRandom.hex(3)}@example.com")
+
+      audit = AuditLog.where(entity_type: "User", action: "user_updated").last
+      expect(audit).to be_present
+    end
+
+    it "serializes Time as ISO8601" do
+      RequestStore.store[:audit_user] = user
+      time_value = Time.utc(2026, 1, 1, 12, 0, 0)
+      order = create(:order, user: user, created_at: time_value)
+
+      # Force an update to trigger audit
+      order.update!(status: "successful")
+
+      audit = AuditLog.where(entity_type: "Order").last
+      # The updated_at should be serialized as ISO8601 string
+      expect(audit.metadata).to be_a(Hash)
+    end
+  end
+
+  describe "audit_enabled = false" do
+    after do
+      User.audit_enabled = true
+      Account.audit_enabled = true
+    end
+
+    it "skips all audit logging when disabled" do
+      User.audit_enabled = false
+      Account.audit_enabled = false
+
+      expect {
+        create(:user, email: "disabled_#{SecureRandom.hex(6)}@example.com")
+      }.not_to change(AuditLog, :count)
+    end
+
+    it "still allows logging when re-enabled" do
+      User.audit_enabled = false
+      Account.audit_enabled = false
+      User.audit_enabled = true
+      Account.audit_enabled = true
+
+      expect {
+        create(:user, email: "reenabled_#{SecureRandom.hex(6)}@example.com")
+      }.to change(AuditLog, :count).by(2) # user + account
     end
   end
 end

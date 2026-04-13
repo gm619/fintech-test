@@ -15,6 +15,6 @@ class CreateAuditLogs < ActiveRecord::Migration[8.1]
 
     add_index :audit_logs, :action
     add_index :audit_logs, :created_at
-    add_index :audit_logs, [:entity_type, :entity_id]
+    add_index :audit_logs, [ :entity_type, :entity_id ]
   end
 end

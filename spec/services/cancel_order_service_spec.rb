@@ -24,6 +24,14 @@ RSpec.describe CancelOrderService do
         described_class.new(order).call
         expect(order.reload).to be_canceled
       end
+
+      it 'creates a credit transaction with correct attributes' do
+        described_class.new(order).call
+        tx = order.transactions.last
+        expect(tx.operation_type).to eq('credit')
+        expect(tx.amount.cents).to eq(100_00)
+        expect(tx.description).to include('Refund')
+      end
     end
 
     context 'with non-successful order' do
@@ -33,6 +41,34 @@ RSpec.describe CancelOrderService do
         expect { described_class.new(order).call }
           .to raise_error(/Order not successful/)
       end
+    end
+
+    context 'with already canceled order' do
+      let(:order) { create(:order, user: user, status: 'canceled') }
+
+      it 'raises an error on double cancel' do
+        expect { described_class.new(order).call }
+          .to raise_error(/Cannot cancel order/)
+      end
+    end
+
+    it 'rolls back credit if cancel fails' do
+      balance_before = user.account.reload.balance.cents
+
+      allow(order).to receive(:cancel!).and_raise(RuntimeError, "transition failed")
+
+      expect {
+        described_class.new(order).call
+      }.to raise_error(/Cannot cancel order/)
+
+      expect(user.account.reload.balance.cents).to eq(balance_before)
+    end
+
+    it 'wraps error messages with context' do
+      allow(order).to receive(:cancel!).and_raise(RuntimeError, "transition failed")
+
+      expect { described_class.new(order).call }
+        .to raise_error(/Cannot cancel order: transition failed/)
     end
   end
 end

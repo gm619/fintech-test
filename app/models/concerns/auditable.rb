@@ -39,14 +39,14 @@ module Auditable
     end
 
     def without_auditing
-      $auditing_disabled = true
+      RequestStore.store[:auditing_disabled] = true
       yield
     ensure
-      $auditing_disabled = false
+      RequestStore.store[:auditing_disabled] = false
     end
 
     def auditing_disabled?
-      $auditing_disabled == true
+      RequestStore.store[:auditing_disabled] == true
     end
   end
 
@@ -91,11 +91,11 @@ module Auditable
   end
 
   def current_user_for_audit
-    Thread.current[:audit_user]
+    RequestStore.store[:audit_user]
   end
 
   def current_request_for_audit
-    Thread.current[:audit_request]
+    RequestStore.store[:audit_request]
   end
 
   def audit_excluded_attrs
@@ -120,7 +120,7 @@ module Auditable
 
   def serialize_value(value)
     case value
-    when BigDecimal then value.to_f
+    when BigDecimal then value.to_s
     when Time, DateTime then value.iso8601
     when ActiveRecord::Relation then value.ids
     when ApplicationRecord then { type: value.class.name, id: value.id }

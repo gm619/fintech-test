@@ -2,10 +2,10 @@
 
 class AccountPolicy < ApplicationPolicy
   def show?
-    record.user == user
+    user.present? && record.user == user
   end
 
   def transactions?
-    record.user == user
+    user.present? && record.user == user
   end
 end

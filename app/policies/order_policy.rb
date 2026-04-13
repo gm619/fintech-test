@@ -6,7 +6,7 @@ class OrderPolicy < ApplicationPolicy
   end
 
   def show?
-    record.user == user
+    user.present? && record.user == user
   end
 
   def create?
@@ -14,14 +14,14 @@ class OrderPolicy < ApplicationPolicy
   end
 
   def complete?
-    record.user == user && record.created?
+    user.present? && record.user == user && record.created?
   end
 
   def cancel?
-    record.user == user && (record.created? || record.successful?)
+    user.present? && record.user == user && (record.created? || record.successful?)
   end
 
   def payment_logs?
-    record.user == user
+    user.present? && record.user == user
   end
 end

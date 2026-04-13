@@ -15,6 +15,7 @@ class Account < ApplicationRecord
   def debit!(amount, order, description = nil)
     amount = Money.new(amount) if amount.is_a?(Numeric)
 
+    raise ArgumentError, "Amount must be positive" unless amount.positive?
     raise "Insufficient funds" if balance < amount
 
     old_balance = balance
@@ -31,6 +32,8 @@ class Account < ApplicationRecord
 
   def credit!(amount, order, description = nil)
     amount = Money.new(amount) if amount.is_a?(Numeric)
+
+    raise ArgumentError, "Amount must be positive" unless amount.positive?
 
     old_balance = balance
     update!(balance: balance + amount)

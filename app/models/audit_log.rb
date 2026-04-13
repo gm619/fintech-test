@@ -16,6 +16,7 @@ class AuditLog < ApplicationRecord
   ACTIONS = %w[
     user_login
     user_logout
+    login_failed
     order_created
     order_completed
     order_canceled

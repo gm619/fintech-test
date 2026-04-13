@@ -13,12 +13,12 @@ class ApplicationController < ActionController::API
   private
 
   def set_audit_context
-    Thread.current[:audit_user] = @current_user
-    Thread.current[:audit_request] = request
+    RequestStore.store[:audit_user] = @current_user
+    RequestStore.store[:audit_request] = request
     yield
   ensure
-    Thread.current[:audit_user] = nil
-    Thread.current[:audit_request] = nil
+    RequestStore.store[:audit_user] = nil
+    RequestStore.store[:audit_request] = nil
   end
 
   def authenticate_user!
@@ -43,8 +43,6 @@ class ApplicationController < ActionController::API
   end
 
   def audit_log!(action, entity: nil, metadata: {})
-    return unless @current_user
-
     AuditLog.log!(
       user: @current_user,
       action: action,
@@ -52,5 +50,7 @@ class ApplicationController < ActionController::API
       metadata: metadata,
       request: request
     )
+  rescue StandardError => e
+    Rails.logger.error("[AuditLog] Failed to log: #{e.message}")
   end
 end

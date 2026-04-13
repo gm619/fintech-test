@@ -42,6 +42,7 @@ gem "strong_migrations"
 gem "money-rails"
 gem "rack-attack"
 gem "pundit"
+gem "request_store"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

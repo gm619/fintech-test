@@ -375,8 +375,8 @@ GEM
     stripe (19.0.0)
       bigdecimal
       logger
-    strong_migrations (2.5.2)
-      activerecord (>= 7.1)
+    strong_migrations (2.6.0)
+      activerecord (>= 7.2)
     thor (1.5.0)
     thruster (0.1.20)
     thruster (0.1.20-aarch64-linux)

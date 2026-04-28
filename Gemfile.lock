@@ -83,7 +83,7 @@ GEM
     bcrypt_pbkdf (1.1.2)
     bcrypt_pbkdf (1.1.2-arm64-darwin)
     bcrypt_pbkdf (1.1.2-x86_64-darwin)
-    bigdecimal (4.1.1)
+    bigdecimal (4.1.2)
     bootsnap (1.23.0)
       msgpack (~> 1.2)
     brakeman (8.0.4)
@@ -372,7 +372,7 @@ GEM
       net-ssh (>= 2.8.0)
       ostruct
     stringio (3.2.0)
-    stripe (19.0.0)
+    stripe (19.1.0)
       bigdecimal
       logger
     strong_migrations (2.5.2)
